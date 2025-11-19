@@ -11,4 +11,7 @@ In general the virtual environment is activated using
 ```
 source venv/bin/activate
 ```
-
+From here the ipynb file can be run using either jupyter notebook or some other IDE that can render/handle ipynb kernels. We've opted for using jupyter notebook. To set up the appropriate kernel use:
+```
+python -m ipykernel install --user --name .venv --display-name "455 Env"
+```
