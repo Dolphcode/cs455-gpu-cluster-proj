@@ -1,3 +1,4 @@
 # Environment files in the ipynb folder
 project/v0_ipynb/.venv/*
+project/v0_ipynb/.ipynb_checkpoints/*
 project/v0_ipynb/yolov8n.pt
