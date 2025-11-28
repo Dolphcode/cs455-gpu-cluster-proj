@@ -1,0 +1,28 @@
+I want to maintain some form of temporal + spatial locality of data to ensure a fast program here, so we'll be deliberate about allocating the memory needed
+for this model to work.
+
+Assuming a batch size of N
+
+I'll use the conv_t and tensor_t structs to define metadata about how convolutional kernels and tensors are stored in memory
+
+The input tensor to a layer will have dimensions defined as such:
+N = batch size
+C = # Channels
+H = N + 1 + N x HEIGHT
+W = 2 + WIDTH
+The 2 or N + 1 rows/columns is the padding, though I will share the zero padding between batch examples vertically
+hence why there is N + 1
+
+conv2d1 N x 3 x 640 x 640
+conv2d2 N x 64 x 320 x 320
+
+Convolutional layers will be defined in memory in the following order
+(I list dimensions in order: # of filters, # of channels, w, h)
+(When memory is allocated, every filter will also have a bias term, a conv_t will be allocated in memory like so:
+	conv_t -> data
+	data == 64 x (filter(C x H x W) + bias)
+)
+
+conv2d1 16 x 3 x 3 x 3
+conv2d2 32 x 16 x 3 x 3
+c2f_c2d1 128 x 128 

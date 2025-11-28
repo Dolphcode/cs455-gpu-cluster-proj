@@ -2,3 +2,6 @@
 project/v0_ipynb/.venv/*
 project/v0_ipynb/.ipynb_checkpoints/*
 project/v0_ipynb/yolov8n.pt
+
+# Build directory
+build/
