@@ -5,7 +5,7 @@ project(YOLOv8_CPP VERSION 0.1
 
 
 find_package(OpenMP REQUIRED)
-find_package(OpenCV REQUIRED)
+#find_package(OpenCV REQUIRED)
 
 # Project subdirectories
 add_subdirectory("project/v1_serial")

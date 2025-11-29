@@ -1,6 +1,7 @@
 #include <cstdlib>
+#include <iostream>
 
-#include "layer_structs.cpp"
+#include "layer_structs.h"
 
 
 void conv_malloc_amt(int dim, int channels, int filters, int padding, int w, int h, int batch_size, size_t *conv_size, size_t *layer_in_size) {
@@ -46,4 +47,6 @@ void* conv_layer(int dim, int channels, int stride, int padding, int filters, vo
 
 	// Now compute the pointer after the data
 	void *next = (void*)(data + (dim * dim * channels + 1) * filters);
+
+	return next;
 }

@@ -44,6 +44,6 @@ void conv_malloc_amt(int dim,
 /**
  * Initializes a convolutional layer at the pointer ptr
  */
-void conv_layer(int dim, int channels, int stride, int padding, int filters, void *ptr);
+void* conv_layer(int dim, int channels, int stride, int padding, int filters, void *ptr);
 
 #endif 
