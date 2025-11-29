@@ -1,11 +1,15 @@
-cmake_minimum_required(VERSION 3.15)
-project(YOLOv8_CPP VERSION 0.1
-	DESCRIPTION ""
-	LANGUAGES CXX CUDA)
+add_executable(YOLOv8_CPP_Serial
+	src/main.cpp
+	src/layer_structs.cpp
+)
 
-# OpenCV
-add_subdirectory("../../extern/opencv")
+target_link_libraries(YOLOv8_CPP_Serial
+	PRIVATE
+		opencv_core
+		opencv_imgproc
+)
 
-
-find_package(MPI REQUIRED)
-find_package(CUDAToolkit REQUIRED)
+target_include_directories(YOLOv8_CPP_Serial
+	PRIVATE	
+		include
+)

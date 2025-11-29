@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "serial_funcs.h"
+#include "layer_structs.h"
 
 int main(int argc, char *argv[]) {
 	// Compute the kernel block size
