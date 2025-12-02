@@ -5,3 +5,6 @@ project/v0_ipynb/yolov8n.pt
 
 # Build directory
 build/
+
+# Testfiles
+./*.txt

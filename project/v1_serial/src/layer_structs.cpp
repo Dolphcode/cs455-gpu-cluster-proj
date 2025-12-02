@@ -3,7 +3,6 @@
 
 #include "layer_structs.h"
 
-
 void conv_malloc_amt(int dim, int channels, int filters, int padding, int w, int h, int batch_size, size_t *conv_size, size_t *layer_in_size) {
 	// Compute the convolution memory allocation amount
 	if (conv_size) {
@@ -39,14 +38,53 @@ void* conv_layer(int dim, int channels, int stride, int padding, int filters, vo
 	conv_layer->dim = dim;
 	conv_layer->channels = channels;
 	conv_layer->stride = stride;
+	conv_layer->padding = padding;
 	conv_layer->filters = filters;
+	conv_layer->data_len = (dim * dim * channels + 1) * filters;
 
 	// Get the data pointer
 	float *data = (float*)(conv_layer + 1);
 	conv_layer->kernel = data;
 
 	// Now compute the pointer after the data
-	void *next = (void*)(data + (dim * dim * channels + 1) * filters);
+	void *next = (void*)(data + conv_layer->data_len);
 
 	return next;
+}
+
+void write_conv(FILE *outfile, conv_t *layer) {
+	// Validate the file
+	if (!outfile) return;
+      	
+	// Write the conv layer metadata
+	fwrite(layer, sizeof(int), 6, outfile);
+
+	// Write the actual data
+	//int num_floats = layer->dim * layer->dim * layer->channels * layer->filters + layer->filters;
+	fwrite(layer->kernel, sizeof(float), layer->data_len, outfile);
+}
+
+void read_conv(FILE *infile, conv_t *layer) {
+	// Validate the file
+	if (!infile) return;
+
+	// Read to the conv layer
+	fread(layer, sizeof(int), 6, infile);
+
+	// Read to the layer	
+	//int num_floats = layer->dim * layer->dim * layer->channels * layer->filters + layer->filters;
+	fread(layer->kernel, sizeof(float), layer->data_len, infile);
+}
+
+void* create_tensor(int w, int h, int d, int n, void *buf) {
+	if (!buf) return NULL;
+	tensor_t *tensor = (tensor_t*)buf;
+
+	tensor->w = w;
+	tensor->h = h;
+	tensor->d = d;
+	tensor->n = n;
+
+	tensor->data = (float*)(tensor + 1);
+	return (void*)(tensor->data + (w * h * d * n));
 }
