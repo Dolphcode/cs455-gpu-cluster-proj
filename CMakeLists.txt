@@ -9,3 +9,4 @@ find_package(OpenCV REQUIRED)
 
 # Project subdirectories
 add_subdirectory("project/v1_serial")
+add_subdirectory("project/v1_serial_poc")

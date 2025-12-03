@@ -7,3 +7,12 @@
 The goal of this project is to construct a rough implementation of the YOLOv8 image detector model using MPI and CUDA (hopefully, CUDA-aware MPI towards the end for increased efficiency), and to compare our implementation with the existing implementation of the model both in efficiency of training passes and validation passes.
 
 This `README.md` file will contain a chronological detailing/documentation of the implementation of this architecture.
+
+### Dependencies
+On Fedora Linux we used
+```
+opencv-devel
+opencv
+openmp
+CUDA
+```
