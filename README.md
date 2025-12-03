@@ -29,3 +29,17 @@ The first two lines in the above sequence need only be run the first time the pr
 
 The build folder is organized into the same folder hierarchy as the source code for this project, such that each version of executable for this project can be found under its corresponding subfolder.
 
+## Project Timeline
+### v0 - Python Implementation, Model Exploration, and Tooling
+The `v0` version of this project is not so much an implementation of the architecture as it is an exploration of the architecture. We took some time to both download a version of the model and analyze the architecture to understand how model parameters and hyperparameters were chosen, and determine the best approach for implementing the model in C++ as opposed to Python.
+
+Ultralytics provides pretrained versions of their detection models, so we use a pretrained version of the YOLOv8 nano model (containing around 3.1 million parameters) which was pretrained on the COCOv8 dataset. The `ipynb` file contained demonstrates how the model works and what output we expect to come out of the model.
+
+We realized given time contraints for this project and hardware constraints of our devices that it would not be feasible in this iteration of the project to implement a backward pass for our model, so we focused on implementing and optimizing the forward pass for our model, and our plan is to use the Python implementation as a baseline of comparison/performance testing for our code.
+
+In order for our implementation of the architecture to perform well, however, we would need to be able to extract the weights of a pretrained model and format them into a parseable format for our implementation of the YOLOv8 model. Thus the `ipynb` file in this iteration of the project includes a set of routines to extract model weights and biases from a pretrained YOLOv8 model, and write them to a raw binary file which will be parsed as part of the preprocessing pipeline for our version of the model.
+
+### v1 - Serial Implementation
+One of the most challenging components of the serial implementation was the overall pipeline implementation.
+
+For the serial convolution implementation, we opted for a rough and simple implementation of the convolution operation (with more time we would ideally reformat the operation as a matrix multiply). Since the bulk of the challenge for drafting the model in the serial version is setting up pipelines for routing and pushing data to memory, we focused on getting a model that functioned with a pipeline that would be feasible to modify to include MPI and CUDA functionality later.
