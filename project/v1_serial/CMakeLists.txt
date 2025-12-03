@@ -2,6 +2,7 @@ add_executable(YOLOv8_CPP_Serial_Main
 	src/main.cpp
 	src/prepostproc.cpp
 	src/layer_structs.cpp
+	src/serial_funcs.cpp
 )
 
 target_link_libraries(YOLOv8_CPP_Serial_Main

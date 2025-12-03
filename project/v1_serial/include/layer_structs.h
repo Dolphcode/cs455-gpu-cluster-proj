@@ -30,6 +30,16 @@ size_t conv_malloc_amt(
 		int filters
 );
 
+size_t c2f_malloc_amt(
+		int in_channels,
+		int out_channels,
+		int n
+);
+
+size_t sppf_malloc_amt(
+		int in_channels
+);
+
 /**
  * Reads a convolutional layer from a binary file to a buffer. Returns the address
  * after the convolution layer in memory.
