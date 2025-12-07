@@ -13,6 +13,8 @@
 
 #define		MB_UNIT			(2 << 20)
 
+#define		MAX_LAYERS		50
+
 int main(int argc, char *argv[]) {
 	// Allocate a big buffer
 	void *img_buf = calloc(MAX_TENSOR_BLOCK * PREALLOC_TENSORS, sizeof(float));
@@ -61,10 +63,10 @@ int main(int argc, char *argv[]) {
 	// Test the first layer
 	conv_t *conv_lay = (conv_t*)conv_buf;
 	printf("\nComputing a convolution\n");
-	conv_layer_serial(img_tensor, (tensor3_t*)blocks[1], conv_lay, 1);
+	conv_layer_serial(img_tensor, (tensor3_t*)blocks[1], conv_lay, 1, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	printf("\tTensor is %d x %d with %d channels\n", blocks[1]->w, blocks[1]->h, blocks[1]->c);
-	printf("\tValue at (0, 0, 0) is %f\n", blocks[1]->data[blocks[1]->w + 1]);
+	printf("\tValue at (1, 1, 0) is %f\n", blocks[1]->data[1 * blocks[1]->w * blocks[1]->h + 1 * blocks[1]->w + 2]);
 
 	// Cleanup	
 	printf("Finishing work\n", infile);	

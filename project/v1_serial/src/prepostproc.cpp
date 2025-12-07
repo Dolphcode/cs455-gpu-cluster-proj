@@ -27,14 +27,14 @@ tensor3_t* load_image(std::string filepath, int padding, void *buf) {
 		for (int row = padding; row < padding + PROCESS_DIM; row++) {
 			for (int col = padding; col < padding + PROCESS_DIM; col++) {
 				// Compute the index in the raw image
-				int im_idx = (row - padding) * metadata->w * metadata->c +
+				int im_idx = (row - padding) * PROCESS_DIM * metadata->c +
 					(col - padding) * metadata->c +
 					(2 - c);
 
 				// Compute the index in the buffer
 				// Organized like this to make splitting easier
-				int buf_idx = c * PROCESS_DIM * PROCESS_DIM +
-					row * PROCESS_DIM +
+				int buf_idx = c * metadata->w * metadata->h +
+					row * metadata->w +
 					col;
 				
 				// Transfer to the buffer. Normalize the colors
