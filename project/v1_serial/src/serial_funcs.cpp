@@ -3,6 +3,14 @@
 #include "serial_funcs.h"
 
 void conv_layer_serial(tensor3_t *in, tensor3_t *out, conv_t *kernel, int padding, int keep_tensor) {
+	// Checks
+	printf("Currently working on kernel with %d %d %d %d %d\n",
+			kernel->dim,
+			kernel->channels,
+			kernel->filters,
+			kernel->stride,
+			kernel->padding);
+	
 	// Setup the output tensor
 	if (!keep_tensor) {
 		out->w = 2 * padding + ((in->w - 2 * kernel->padding) / kernel->stride);
