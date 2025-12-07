@@ -45,6 +45,15 @@ int main(int argc, char *argv[]) {
 	conv_block_size += c2f_malloc_amt(192, 128, 1);		// C2f 18
 	conv_block_size += conv_malloc_amt(3, 128, 128);	// Conv 19
 	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	
 	
 	printf("Allocating %d MiB of memory for conv layers\n", conv_block_size / MB_UNIT);
 	void *conv_buf = calloc(conv_block_size / sizeof(float), sizeof(float));
@@ -57,7 +66,22 @@ int main(int argc, char *argv[]) {
 	FILE *infile = fopen("./filters.bin", "rb");
 	void *curr = conv_buf;
 	int counter = 0;
-	while ((curr = fread_conv(infile, curr)) != NULL) counter++;
+
+	conv_t *track = (conv_t*)conv_buf;	
+	while ((curr = fread_conv(infile, curr)) != NULL) {
+		printf("Read convolution %d\n", counter);
+		conv_t *curr_conv_buf = (conv_t*)curr;
+		printf("%d B consumed already!\n", (char*)curr - (char*)conv_buf);
+		printf("dim=%d, stride=%d, pad=%d, filters=%d\n\n", track->dim, 
+				track->stride, 
+				track->padding, 
+				track->filters);
+
+		counter++;
+		track = curr_conv_buf;
+	}
+	
+	fread_conv(infile, curr);
 	printf("Read %d convolutional layers from the binary file\n", counter);
 	
 	// Test the first layer
