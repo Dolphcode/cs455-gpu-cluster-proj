@@ -17,8 +17,8 @@
 
 #define		MAX_LAYERS		50
 
-#define		THRESHOLD		0.9
-#define		IOU_THRESHOLD	0.3
+//#define		THRESHOLD		0.9
+//#define		IOU_THRESHOLD	0.3
 
 void test_tensor_printf(tensor3_t* tensor, int x, int y, int channel) {
 	printf("Tensor is %d x %d with %d channels\n",
@@ -41,8 +41,11 @@ void test_tensor_printf(tensor3_t* tensor, int x, int y, int channel) {
 }
 
 int main(int argc, char *argv[]) {
-	// Read
-
+	// Read from argv
+	float THRESHOLD = atof(argv[1]);
+	float IOU_THRESHOLD = atof(argv[2]);
+	char fpath_buf[512];
+	strcpy(fpath_buf, argv[3]);
 
 	// Allocate a big buffer
 	void *img_buf = calloc(MAX_TENSOR_BLOCK * PREALLOC_TENSORS, sizeof(float));
@@ -87,7 +90,7 @@ int main(int argc, char *argv[]) {
 	void *conv_buf = calloc(conv_block_size / sizeof(float), sizeof(float));
 
 	// Load the image
-	tensor3_t* img_tensor = load_image("./dog.jpg", 1, blocks[0]);
+	tensor3_t* img_tensor = load_image(fpath_buf, 1, blocks[0]);
 	printf("Image successfully loaded!\n");
 
 	// Load the convolution layers
@@ -359,11 +362,6 @@ int main(int argc, char *argv[]) {
 	detect_layer_serial(large_h1_out, &blocks[7], &conv_kernels[45]);
 	memset(blocks[8], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
 	test_tensor_printf(blocks[7], 0, 0, 0);
-	test_tensor_printf(blocks[7], 0, 0, 0);
-	test_tensor_printf(blocks[7], 0, 0, 0);
-	test_tensor_printf(blocks[7], 0, 0, 0);
-	test_tensor_printf(blocks[7], 0, 0, 0);
-	test_tensor_printf(blocks[7], 0, 0, 0);
 
 	// Detect 2
 	printf("\nBBox Detect 128 Channel\n");
@@ -519,24 +517,13 @@ int main(int argc, char *argv[]) {
 			softmax_sum += exp(classes[c]);
 		}
 		for (int c = 0; c < 80; ++c) {
-			classes[c] = exp(classes[c]) / softmax_sum;
+			classes[c] = 1.0f / (1.0f + expf(-classes[c]));
 			if (classes[c] > expected) {
 				expected = classes[c];
 				boxes[y * blocks[7]->w + x].cid = c;
 				boxes[y * blocks[7]->w + x].class_conf = classes[c];
 			}
 		}
-		/*
-		if (boxes[y * blocks[7]->w + x].cid == 16) {
-			printf("Box Detected:\n(%d, %d) %dx%d, Class %d with %f confidence\n",
-						boxes[y * blocks[7]->w + x].x,
-				boxes[y * blocks[7]->w + x].y,
-				boxes[y * blocks[7]->w + x].w,
-				boxes[y * blocks[7]->w + x].h,
-				boxes[y * blocks[7]->w + x].cid,
-				boxes[y * blocks[7]->w + x].class_conf
-			);
-		}*/
 
 
 	}	
@@ -646,24 +633,13 @@ int main(int argc, char *argv[]) {
 				softmax_sum += exp(classes[c]);
 			}
 			for (int c = 0; c < 80; ++c) {
-				classes[c] = exp(classes[c]) / softmax_sum;
+				classes[c] = 1.0f / (1.0f + expf(-classes[c]));
 				if (classes[c] > expected) {
 					expected = classes[c];
 					boxes[offset + y * blocks[8]->w + x].cid = c;
 					boxes[offset + y * blocks[8]->w + x].class_conf = classes[c];
 				}
 			}
-			/*
-			if (boxes[offset + y * blocks[8]->w + x].cid == 16) {
-				printf("Box Detected:\n(%d, %d) %dx%d, Class %d with %f confidence\n",
-					   boxes[offset + y * blocks[8]->w + x].x,
-		   boxes[offset + y * blocks[8]->w + x].y,
-		   boxes[offset + y * blocks[8]->w + x].w,
-		   boxes[offset + y * blocks[8]->w + x].h,
-		   boxes[offset + y * blocks[8]->w + x].cid,
-		   boxes[offset + y * blocks[8]->w + x].class_conf
-				);
-			}*/
 		}
 
 		offset += blocks[8]->w * blocks[8]->h;
@@ -750,14 +726,6 @@ int main(int argc, char *argv[]) {
 				}
 				boxes[offset + y * blocks[9]->w + x].h = box_center_y + int(round(expected * stride * 2)) - boxes[offset + y * blocks[9]->w + x].y;
 
-				/*
-				 * printf("Box Detected:\n(%d, %d) %dx%d\n",
-				 *	   boxes[y * blocks[8]->w + x].x,
-				 * boxes[y * blocks[8]->w + x].y,
-				 * boxes[y * blocks[8]->w + x].w,
-				 * boxes[y * blocks[8]->w + x].h
-				 * );*/
-
 				// Class Selection
 				softmax_sum = 0.0;
 				expected = 0.0;
@@ -771,74 +739,14 @@ int main(int argc, char *argv[]) {
 					softmax_sum += exp(classes[c]);
 				}
 				for (int c = 0; c < 80; ++c) {
-					classes[c] = exp(classes[c]) / softmax_sum;
+					classes[c] = 1.0f / (1.0f + expf(-classes[c]));
 					if (classes[c] > expected) {
 						expected = classes[c];
 						boxes[offset + y * blocks[9]->w + x].cid = c;
 						boxes[offset + y * blocks[9]->w + x].class_conf = classes[c];
 					}
 				}
-				/*
-				if (boxes[offset + y * blocks[9]->w + x].cid == 16) {
-					printf("Box Detected:\n(%d, %d) %dx%d, Class %d with %f confidence\n",
-						   boxes[offset + y * blocks[9]->w + x].x,
-			boxes[offset + y * blocks[9]->w + x].y,
-			boxes[offset + y * blocks[9]->w + x].w,
-			boxes[offset + y * blocks[9]->w + x].h,
-			boxes[offset + y * blocks[9]->w + x].cid,
-			boxes[offset + y * blocks[9]->w + x].class_conf
-					);
-				}*/
 			}
-
-	/**
-	int box_counter = 0;
-	float max_confidence = 0.0;
-	int max_conf_idx = 0;
-	for (int i = 0; i < total_boxes; i++) {
-		if (boxes[i].class_conf < THRESHOLD) {
-			boxes[i].inactive = 1;
-			box_counter++;
-			continue;
-		}
-
-		if (boxes[i].class_conf > max_confidence) {
-			max_confidence = boxes[i].class_conf;
-			max_conf_idx = i;
-
-		}
-	}
-
-	printf("Best Box Detected:\n(%d, %d) %dx%d, Class %d with %f confidence\n",
-		   boxes[max_conf_idx].x,
-		boxes[max_conf_idx].y,
-		boxes[max_conf_idx].w,
-		boxes[max_conf_idx].h,
-		boxes[max_conf_idx].cid,
-		boxes[max_conf_idx].class_conf
-	);
-
-	for (int i = 0; i < total_boxes; i++) {
-		if (boxes[i].inactive) continue;
-		if (i == max_conf_idx) continue;
-
-		float x_int_min = std::max(boxes[i].x, boxes[max_conf_idx].x);
-		float y_int_min = std::max(boxes[i].y, boxes[max_conf_idx].y);
-		float x_int_max = std::min(boxes[i].x + boxes[i].w, boxes[max_conf_idx].x + boxes[max_conf_idx].w);
-		float y_int_max = std::min(boxes[i].y + boxes[i].h, boxes[max_conf_idx].y + boxes[max_conf_idx].h);
-		float inter_area = std::max(0.0f, x_int_max - x_int_min) * std::max(0.0f, y_int_max - y_int_min);
-
-		float area1 = boxes[i].w * boxes[i].h;
-		float area2 = boxes[max_conf_idx].w * boxes[max_conf_idx].h;
-		float union_area = area1 + area2 - inter_area;
-
-		float iou = inter_area / union_area;
-		if (iou > 0.5) {
-			boxes[i].inactive = 1;
-			box_counter++;
-		}
-	}
-	**/
 
 	// Initialize inactive flags and build list of candidate indices
 	std::vector<int> idxs;
@@ -887,10 +795,13 @@ int main(int argc, char *argv[]) {
 		}
 	}
 
-	cv::Mat image = cv::imread("./dog.jpg", cv::IMREAD_COLOR);
-	cv::Size newsize(PROCESS_DIM, PROCESS_DIM);
-	cv::Mat resized;
-	cv::resize(image, resized, newsize);
+	cv::Mat image = cv::imread(fpath_buf, cv::IMREAD_COLOR);
+	//cv::Size newsize(PROCESS_DIM, PROCESS_DIM);
+	//cv::Mat resized;
+	//cv::resize(image, resized, newsize);
+	float r = std::min((float)PROCESS_DIM / (float)image.cols, (float)PROCESS_DIM / (float)image.rows);
+	float pad_w = PROCESS_DIM - (r * image.cols);
+	float pad_h = PROCESS_DIM - (r * image.rows);
 
 	// Debug print: how many were suppressed
 	int disabled = 0;
@@ -898,6 +809,40 @@ int main(int argc, char *argv[]) {
 		if (boxes[i].inactive) disabled++;
 
 		if (!boxes[i].inactive) {
+			int x1 = std::round((boxes[i].x - (pad_w / 2)) / r);
+			int y1 = std::round((boxes[i].y - (pad_h / 2)) / r);
+			int x2 = std::round((boxes[i].w / r) + x1);
+			int y2 = std::round((boxes[i].h / r) + y1);
+
+			cv::rectangle(
+				image,
+				 cv::Point(x1, y1- 20),
+						  cv::Point(x1 + 100, y1),
+						  cv::Scalar(255, 0, 0),
+						  -1
+			);
+
+			cv::rectangle(
+				image,
+				 cv::Point(x1, y1),
+						  cv::Point(x2, y2),
+						  cv::Scalar(255, 0, 0),
+						  2
+			);
+
+			char out_text[256];
+			sprintf(out_text, "id%d, %.2f", boxes[i].cid, boxes[i].class_conf);
+
+			cv::putText(
+				image,
+			   out_text,
+			   cv::Point(x1, y1),
+						cv::FONT_HERSHEY_SIMPLEX,
+			   0.5,
+			   cv::Scalar(255, 255, 255)
+			);
+
+			/*
 			cv::rectangle(
 				resized,
 				cv::Point(boxes[i].x, boxes[i].y - 20),
@@ -925,13 +870,13 @@ int main(int argc, char *argv[]) {
 				0.5,
 				cv::Scalar(255, 255, 255)
 			);
+			*/
 		}
 
 
 	}
-	cv::imwrite("output.jpg", resized);
+	cv::imwrite("output.jpg", image);
 	printf("Disabled %d boxes\n", disabled);
-
 
 	// Cleanup
 	printf("Finishing work\n", infile);	
