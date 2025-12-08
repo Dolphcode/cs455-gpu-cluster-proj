@@ -30,6 +30,12 @@ tensor3_t* sppf_layer_serial(
 		int out_padding
 );
 
+tensor3_t* detect_layer_serial(
+		tensor3_t *in,
+		tensor3_t **tensor_buf,
+		conv_t **conv_buf
+);
+
 void upsample_layer_serial(
 		tensor3_t *in,
 		tensor3_t *out

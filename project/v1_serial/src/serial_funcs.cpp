@@ -286,3 +286,88 @@ void upsample_layer_serial(tensor3_t *in, tensor3_t *out) {
 	}
 }
 
+tensor3_t* detect_layer_serial(tensor3_t *in, tensor3_t **tensor_buf, conv_t **conv_buf) {
+	// First two convolutional layers
+	conv_layer_serial(in, tensor_buf[0], conv_buf[0], 1, 0);
+	conv_layer_serial(tensor_buf[0], tensor_buf[1], conv_buf[1], 0, 0);
+	
+	// Set
+	conv_t *kernel = conv_buf[2];
+	tensor3_t *out = tensor_buf[0];
+	in = tensor_buf[1];
+	int padding = 0;
+
+	// Checks
+	printf("Currently working on kernel with %d %d %d %d %d\n",
+			kernel->dim,
+			kernel->channels,
+			kernel->filters,
+			kernel->stride,
+			kernel->padding);
+	
+	// Setup the output tensor
+	out->w = 2 * padding + ((in->w - 2 * kernel->padding) / kernel->stride);
+	out->h = 2 * padding + ((in->h - 2 * kernel->padding) / kernel->stride);
+	out->c = kernel->filters;
+	out->data = (float*)(out + 1);
+
+	// Perform the convolution AND the sigmoid iteratively
+	for (int filter = 0; filter < kernel->filters; filter++) {
+		// Get the address of the current kernel we're using to compute
+		float *curr_kernel = &kernel->kernel[
+			filter * (kernel->dim * kernel->dim * kernel->channels + 1)
+		];
+		
+		// Work from the output
+		for (int out_row = padding; out_row < out->h - padding; out_row++) {
+			for (int out_col = padding; out_col < out->w - padding; out_col++) {
+				// Zero initialize the sum
+				float sum = 0.0;
+
+				// Compute the pixels in the input we're pulling from
+				int x_pix = ((out_col - padding) * kernel->stride) + kernel->padding;
+				int y_pix = ((out_row - padding) * kernel->stride) + kernel->padding;
+				
+				// Perform the kernel convolution
+				for (int z = 0; z < kernel->channels; z++) {
+					for (int y = 0; y < kernel->dim; y++) {
+						for (int x = 0; x < kernel->dim; x++) {
+							// Compute the offset from the current input pixel we're centering the convolution around
+							int kernel_x_offset = x - (kernel->dim / 2);
+							int kernel_y_offset = y - (kernel->dim / 2);
+
+							// Grab the input pixel
+							float in_pix = in->data[
+								z * in->w * in->h +
+								(y_pix + kernel_y_offset) * in->w +
+								(x_pix + kernel_x_offset)
+							];
+							if (in_pix > 100) printf("Conv IN VAL ERR %f %d %d\n", in_pix, in->w, in->h);
+
+							// Add to sum
+							sum += in_pix * curr_kernel[
+								z * kernel->dim * kernel->dim +
+								y * kernel->dim +
+								x
+							];
+								
+						}
+					}
+				}
+					
+				// Add the bias
+				sum += kernel->kernel[(kernel->dim * kernel->dim * kernel->channels + 1) * filter 
+							+ (kernel->dim * kernel->dim * kernel->channels)];
+
+				// Set the output pixel to the sum
+				out->data[
+					filter * out->w * out->h +
+					out_row * out->w +
+					out_col
+				] = sum;
+			}
+		}
+	}
+
+	return tensor_buf[0];
+}

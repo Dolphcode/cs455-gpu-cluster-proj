@@ -3,7 +3,7 @@
 tensor3_t* load_image(std::string filepath, int padding, void *buf) {
 	// Verify that buf is real
 	if (!buf) return NULL;
-	
+
 	// Load the image
 	printf("Loading image at %s with OpenCV\n", filepath.c_str());
 	cv::Mat img = cv::imread(filepath, cv::IMREAD_COLOR);
