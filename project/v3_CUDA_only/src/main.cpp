@@ -10,6 +10,8 @@
 #include "layer_structs.h"
 #include "serial_funcs.h"
 
+#include "cuda_layers.h"
+
 #define 	MAX_TENSOR_BLOCK	(1280 * 1280 * 32 + 8)
 #define		PREALLOC_TENSORS	20
 
@@ -121,13 +123,13 @@ int main(int argc, char *argv[]) {
 	// Test the first layer
 	conv_t *conv_lay = (conv_t*)conv_buf;
 	printf("\nComputing a convolution\n");
-	conv_layer_serial(img_tensor, (tensor3_t*)blocks[1], conv_lay, 1, 0);
+	conv_layer_cuda(img_tensor, (tensor3_t*)blocks[1], conv_lay, 1, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[1], 1, 1, 0);
 
 	// Test the second layer
 	printf("\nComputing a convolution\n");
-	conv_layer_serial((tensor3_t*)blocks[1], (tensor3_t*)blocks[2], conv_kernels[1], 0, 0);
+	conv_layer_cuda((tensor3_t*)blocks[1], (tensor3_t*)blocks[2], conv_kernels[1], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[2], 0, 0, 0);
 
@@ -144,7 +146,7 @@ int main(int argc, char *argv[]) {
 	
 	// Conv
 	printf("\nComputing a convolution\n");
-	conv_layer_serial((tensor3_t*)blocks[2], (tensor3_t*)blocks[0], conv_kernels[6], 0, 0);
+	conv_layer_cuda((tensor3_t*)blocks[2], (tensor3_t*)blocks[0], conv_kernels[6], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[0], 0, 0, 0);
 	
@@ -167,7 +169,7 @@ int main(int argc, char *argv[]) {
 	
 	// Conv
 	printf("\nComputing a convolution\n");
-	conv_layer_serial((tensor3_t*)blocks[0], (tensor3_t*)blocks[1], conv_kernels[13], 0, 0);
+	conv_layer_cuda((tensor3_t*)blocks[0], (tensor3_t*)blocks[1], conv_kernels[13], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[1], 0, 0, 0);
 	
@@ -187,7 +189,7 @@ int main(int argc, char *argv[]) {
 	
 	// Conv
 	printf("\nComputing a convolution\n");
-	conv_layer_serial((tensor3_t*)blocks[1], (tensor3_t*)blocks[2], conv_kernels[20], 0, 0);
+	conv_layer_cuda((tensor3_t*)blocks[1], (tensor3_t*)blocks[2], conv_kernels[20], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[2], 0, 0, 0);
 	
@@ -280,7 +282,7 @@ int main(int argc, char *argv[]) {
 
 	// Conv layer
 	printf("\nComputing a convolution\n");
-	conv_layer_serial((tensor3_t*)blocks[4], (tensor3_t*)blocks[5], conv_kernels[35], 0, 0);
+	conv_layer_cuda((tensor3_t*)blocks[4], (tensor3_t*)blocks[5], conv_kernels[35], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[5], 0, 0, 0);
 	
@@ -313,7 +315,7 @@ int main(int argc, char *argv[]) {
 
 	// Conv layer
 	printf("\nComputing a convolution\n");
-	conv_layer_serial((tensor3_t*)blocks[5], (tensor3_t*)blocks[6], conv_kernels[40], 0, 0);
+	conv_layer_cuda((tensor3_t*)blocks[5], (tensor3_t*)blocks[6], conv_kernels[40], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[6], 0, 0, 0);
 
