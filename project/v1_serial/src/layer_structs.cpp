@@ -54,6 +54,15 @@ void* fread_conv(FILE *infile, void *buf) {
 	// Read from the file into the buffer
 	fread(buf, sizeof(int), 5, infile);
 	
+	/* DEBUG printing file reading
+	printf("Read Conv: %d %d %d %d %d at %x\n", *((int*)buf),
+			*((int*)buf + 1),
+			*((int*)buf + 2),
+			*((int*)buf + 3),
+			*((int*)buf + 4),
+			ftell(infile));
+	*/
+
 	// Convert the buf pointer to a convolution pointer
 	conv_t *metadata = (conv_t*)buf;
 

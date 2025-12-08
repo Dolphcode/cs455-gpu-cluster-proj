@@ -9,9 +9,31 @@
 #include "serial_funcs.h"
 
 #define 	MAX_TENSOR_BLOCK	(320 * 320 * 16 + 8)
-#define		PREALLOC_TENSORS	10
+#define		PREALLOC_TENSORS	20
 
 #define		MB_UNIT			(2 << 20)
+
+#define		MAX_LAYERS		50
+
+void test_tensor_printf(tensor3_t* tensor, int x, int y, int channel) {
+	printf("Tensor is %d x %d with %d channels\n",
+			tensor->w,
+			tensor->h,
+			tensor->c);
+
+	
+	printf("\tValue at (%d, %d, %d) is %f\n",
+			channel,
+			x,
+			y,
+			tensor->data[
+				channel * tensor->w * tensor->h + 
+				y * tensor->w + 
+				x
+			]
+		);
+
+}
 
 int main(int argc, char *argv[]) {
 	// Allocate a big buffer
@@ -43,8 +65,17 @@ int main(int argc, char *argv[]) {
 	conv_block_size += c2f_malloc_amt(192, 128, 1);		// C2f 18
 	conv_block_size += conv_malloc_amt(3, 128, 128);	// Conv 19
 	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
 	
-	printf("Allocating %d MiB of memory for conv layers\n", conv_block_size / MB_UNIT);
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	conv_block_size += c2f_malloc_amt(384, 256, 1);		// C2f 21
+	
+	
+	printf("Allocating %d MiB of memory for conv layers\n\n", conv_block_size / MB_UNIT);
 	void *conv_buf = calloc(conv_block_size / sizeof(float), sizeof(float));
 
 	// Load the image
@@ -55,17 +86,43 @@ int main(int argc, char *argv[]) {
 	FILE *infile = fopen("./filters.bin", "rb");
 	void *curr = conv_buf;
 	int counter = 0;
-	while ((curr = fread_conv(infile, curr)) != NULL) counter++;
+
+	conv_t *conv_kernels[64];
+
+	int curr_kernel = 0;	
+	while (1) {
+		// Exit out if we hit the EOF
+		if (curr == NULL) break;
+
+		// Save the kernel pointer
+		conv_kernels[curr_kernel] = (conv_t*)curr;
+		curr = fread_conv(infile, curr);
+		
+		/* DEBUG Print conv kernels as we read them	
+		printf("dim=%d, stride=%d, pad=%d, filters=%d\n\n", conv_kernels[curr_kernel]->dim, 
+				conv_kernels[curr_kernel]->stride, 
+				conv_kernels[curr_kernel]->padding, 
+				conv_kernels[curr_kernel]->filters);
+		*/
+
+		curr_kernel++;
+		counter++;
+	}
 	printf("Read %d convolutional layers from the binary file\n", counter);
 	
 	// Test the first layer
 	conv_t *conv_lay = (conv_t*)conv_buf;
 	printf("\nComputing a convolution\n");
-	conv_layer_serial(img_tensor, (tensor3_t*)blocks[1], conv_lay, 1);
+	conv_layer_serial(img_tensor, (tensor3_t*)blocks[1], conv_lay, 1, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
-	printf("\tTensor is %d x %d with %d channels\n", blocks[1]->w, blocks[1]->h, blocks[1]->c);
-	printf("\tValue at (0, 0, 0) is %f\n", blocks[1]->data[blocks[1]->w + 1]);
+	test_tensor_printf((tensor3_t*)blocks[1], 1, 1, 1);
 
+	// Test the second layer
+	printf("\nComputing a convolution\n");
+	conv_layer_serial((tensor3_t*)blocks[1], (tensor3_t*)blocks[2], conv_kernels[1], 0, 0);
+	printf("Completed! Here's some data about the output of the conv:\n");
+	test_tensor_printf((tensor3_t*)blocks[2], 1, 1, 1);
+	
 	// Cleanup	
 	printf("Finishing work\n", infile);	
 	fclose(infile);
