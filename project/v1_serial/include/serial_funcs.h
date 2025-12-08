@@ -16,13 +16,23 @@ void conv_layer_serial(
 );
 
 
-void c2f_layer_serial(
-		tensor3_t *in,
-		tensor3_t *temp,
-		tensor3_t *out,
- 		conv_t **conv_buf,
-		int n,
+tensor3_t* c2f_layer_serial(
+		tensor3_t **tensor_buf,	// A contiguous array of tensors to work with
+ 		conv_t **conv_buf,	// A contiguous array of convolution layers to work with
+		int n,			// The number of bottleneck layers
+		int out_padding,	// The amount of output padding
+		int shortcut		// Whether this layer should activate the shortcut or not
+);
+
+tensor3_t* sppf_layer_serial(
+		tensor3_t **tensor_buf,
+		conv_t **conv_buf,
 		int out_padding
+);
+
+void upsample_layer_serial(
+		tensor3_t *in,
+		tensor3_t *out
 );
 
 void concat_serial(
