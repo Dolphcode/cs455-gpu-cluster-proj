@@ -2,6 +2,7 @@
 #include <cstring>
 
 #include "serial_funcs.h"
+#include "cuda_layers.h"
 
 void conv_layer_serial(tensor3_t *in, tensor3_t *out, conv_t *kernel, int padding, int keep_tensor) {
 	// Checks
@@ -87,7 +88,7 @@ tensor3_t* c2f_layer_serial(tensor3_t **tensor_buf, conv_t **conv_buf, int n, in
 	// Find the total # of channels
 
 	// Compute the first layer with padding because the bottlenecks require padding	
-	conv_layer_serial(tensor_buf[0], tensor_buf[1], conv_buf[0], 1, 0);
+	conv_layer_cuda(tensor_buf[0], tensor_buf[1], conv_buf[0], 1, 0);
 
 	// Split is implicit
 	
@@ -100,8 +101,8 @@ tensor3_t* c2f_layer_serial(tensor3_t **tensor_buf, conv_t **conv_buf, int n, in
 	for (i = 0; i < n; i++) {
 		int a = 1 + i * 2;
 		int b = a + 1, c = a + 2;
-		conv_layer_serial(tensor_buf[a], tensor_buf[b], conv_buf[1 + i * 2], 1, 0);
-		conv_layer_serial(tensor_buf[b], tensor_buf[c], conv_buf[2 + i * 2], 1, 0);
+		conv_layer_cuda(tensor_buf[a], tensor_buf[b], conv_buf[1 + i * 2], 1, 0);
+		conv_layer_cuda(tensor_buf[b], tensor_buf[c], conv_buf[2 + i * 2], 1, 0);
 		if (shortcut) {
 			for (int chan = 0; chan < tensor_buf[c]->c; chan++) {
 				for (int row = 1; row < tensor_buf[a]->h - 1; row++) {
@@ -169,14 +170,14 @@ tensor3_t* c2f_layer_serial(tensor3_t **tensor_buf, conv_t **conv_buf, int n, in
 	// Final convolution but also zero out padding first
 	memset(tensor_buf[0]->data, 0, sizeof(float) * (out_padding * 2 + concat_out->w) * (out_padding * 2 + concat_out->h) * conv_buf[2 * n + 1]->filters); 
 							
-	conv_layer_serial(concat_out, tensor_buf[0], conv_buf[2 * n + 1], out_padding, 0);
+	conv_layer_cuda(concat_out, tensor_buf[0], conv_buf[2 * n + 1], out_padding, 0);
 	
 	return tensor_buf[0];
 }
 
 tensor3_t *sppf_layer_serial(tensor3_t **tensor_buf, conv_t **conv_buf, int out_padding) {
 	// First convolution layer
-	conv_layer_serial(tensor_buf[0], tensor_buf[1], conv_buf[0], 2, 0);
+	conv_layer_cuda(tensor_buf[0], tensor_buf[1], conv_buf[0], 2, 0);
 
 	// Max Pool Series!!!
 	for (int i = 0; i < 3; i++) {
@@ -251,7 +252,7 @@ tensor3_t *sppf_layer_serial(tensor3_t **tensor_buf, conv_t **conv_buf, int out_
 	}
 
 	// Final convolution
-	conv_layer_serial(concat_out, tensor_buf[0], conv_buf[1], out_padding, 0);
+	conv_layer_cuda(concat_out, tensor_buf[0], conv_buf[1], out_padding, 0);
 	return tensor_buf[0];
 }
 
@@ -288,8 +289,8 @@ void upsample_layer_serial(tensor3_t *in, tensor3_t *out) {
 
 tensor3_t* detect_layer_serial(tensor3_t *in, tensor3_t **tensor_buf, conv_t **conv_buf) {
 	// First two convolutional layers
-	conv_layer_serial(in, tensor_buf[0], conv_buf[0], 1, 0);
-	conv_layer_serial(tensor_buf[0], tensor_buf[1], conv_buf[1], 0, 0);
+	conv_layer_cuda(in, tensor_buf[0], conv_buf[0], 1, 0);
+	conv_layer_cuda(tensor_buf[0], tensor_buf[1], conv_buf[1], 0, 0);
 	
 	// Set
 	conv_t *kernel = conv_buf[2];
