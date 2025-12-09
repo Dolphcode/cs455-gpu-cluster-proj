@@ -3,7 +3,6 @@ project(YOLOv8_CPP VERSION 0.1
 	DESCRIPTION ""
 	LANGUAGES C CXX CUDA)
 
-
 find_package(MPI REQUIRED)
 find_package(OpenCV REQUIRED)
 
@@ -11,3 +10,4 @@ find_package(OpenCV REQUIRED)
 add_subdirectory("project/v1_serial")
 add_subdirectory("project/v1_serial_poc")
 add_subdirectory("project/v2_MPI_only")
+add_subdirectory("project/v4_MPI_CUDA")
