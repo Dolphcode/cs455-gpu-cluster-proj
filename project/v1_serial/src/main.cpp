@@ -127,12 +127,18 @@ int main(int argc, char *argv[]) {
 	conv_layer_serial(img_tensor, (tensor3_t*)blocks[1], conv_lay, 1, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[1], 1, 1, 0);
+	test_tensor_printf((tensor3_t*)blocks[1], 2, 1, 0);
+	test_tensor_printf((tensor3_t*)blocks[1], 1, 2, 0);
+	test_tensor_printf((tensor3_t*)blocks[1], 1, 1, 1);
+	test_tensor_printf((tensor3_t*)blocks[1], 2, 1, 1);
+	test_tensor_printf((tensor3_t*)blocks[1], 1, 2, 1);
 
 	// Test the second layer
 	printf("\nComputing a convolution\n");
 	conv_layer_serial((tensor3_t*)blocks[1], (tensor3_t*)blocks[2], conv_kernels[1], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[2], 0, 0, 0);
+	test_tensor_printf((tensor3_t*)blocks[2], 1, 0, 0);
 
 	// Test the first c2f
 	printf("\nComputing a C2f\n");
@@ -144,12 +150,14 @@ int main(int argc, char *argv[]) {
 			1);
 	printf("Completed! Here's some data about the output of the c2f:\n");
 	test_tensor_printf((tensor3_t*)blocks[2], 1, 1, 0);
+	test_tensor_printf((tensor3_t*)blocks[2], 2, 1, 0);
 	
 	// Conv
 	printf("\nComputing a convolution\n");
 	conv_layer_serial((tensor3_t*)blocks[2], (tensor3_t*)blocks[0], conv_kernels[6], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[0], 0, 0, 0);
+	test_tensor_printf((tensor3_t*)blocks[0], 1, 0, 0);
 	
 	// Clean out
 	memset((tensor3_t*)blocks[1], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
@@ -164,6 +172,7 @@ int main(int argc, char *argv[]) {
 			1);
 	printf("Completed! Here's some data about the output of the c2f:\n");
 	test_tensor_printf((tensor3_t*)blocks[0], 1, 1, 0);
+	test_tensor_printf((tensor3_t*)blocks[0], 2, 1, 0);
 
 	// Clean out
 	memset((tensor3_t*)blocks[1], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
@@ -173,6 +182,7 @@ int main(int argc, char *argv[]) {
 	conv_layer_serial((tensor3_t*)blocks[0], (tensor3_t*)blocks[1], conv_kernels[13], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[1], 0, 0, 0);
+	test_tensor_printf((tensor3_t*)blocks[1], 1, 0, 0);
 	
 	// Test the first c2f
 	printf("\nComputing a C2f\n");
@@ -184,6 +194,7 @@ int main(int argc, char *argv[]) {
 			1);
 	printf("Completed! Here's some data about the output of the c2f:\n");
 	test_tensor_printf((tensor3_t*)blocks[1], 1, 1, 0);
+	test_tensor_printf((tensor3_t*)blocks[1], 2, 1, 0);
 	
 	// Clean out
 	memset((tensor3_t*)blocks[2], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
@@ -193,6 +204,7 @@ int main(int argc, char *argv[]) {
 	conv_layer_serial((tensor3_t*)blocks[1], (tensor3_t*)blocks[2], conv_kernels[20], 0, 0);
 	printf("Completed! Here's some data about the output of the conv:\n");
 	test_tensor_printf((tensor3_t*)blocks[2], 0, 0, 0);
+	test_tensor_printf((tensor3_t*)blocks[2], 1, 0, 0);
 	
 	// Test the first c2f
 	printf("\nComputing a C2f\n");
@@ -204,6 +216,7 @@ int main(int argc, char *argv[]) {
 			1);
 	printf("Completed! Here's some data about the output of the c2f:\n");
 	test_tensor_printf((tensor3_t*)blocks[2], 0, 0, 0);
+	test_tensor_printf((tensor3_t*)blocks[2], 2, 1, 0);
 	
 	// Clean out
 	memset((tensor3_t*)blocks[3], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
@@ -217,6 +230,7 @@ int main(int argc, char *argv[]) {
 	);
 	printf("Completed! Here's some data about the output of sppf:\n");
 	test_tensor_printf((tensor3_t*)blocks[2], 0, 0, 0);
+	test_tensor_printf((tensor3_t*)blocks[2], 1, 0, 0);
 	
 	// Clean out
 	memset((tensor3_t*)blocks[3], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
@@ -245,11 +259,12 @@ int main(int argc, char *argv[]) {
 			
 		concat_out->data[out_idx] = med_bb_out->data[in_idx];
 	}
-	test_tensor_printf(concat_out, 0, 0, 256);
+	test_tensor_printf(concat_out, 0, 0, 0);
 
 	printf("\nC2f for the first medium sized head output\n");
 	tensor3_t* medium_h1_out = c2f_layer_serial(&blocks[3], &conv_kernels[27], 1, 0, 0);
-	test_tensor_printf(concat_out, 1, 1, 0);
+	test_tensor_printf(concat_out, 0, 0, 0);
+	test_tensor_printf(concat_out, 1, 0, 0);
 
 	// Clean out
 	memset(blocks[4], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
@@ -310,7 +325,7 @@ int main(int argc, char *argv[]) {
 	printf("\nC2f for the medium sized head output\n");
 	tensor3_t* medium_head_out = c2f_layer_serial(&blocks[5], &conv_kernels[36], 1, 1, 0);
 	test_tensor_printf(concat_out, 1, 1, 0);
-	
+
 	// Clean out
 	memset(blocks[6], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
 
@@ -362,6 +377,12 @@ int main(int argc, char *argv[]) {
 	detect_layer_serial(large_h1_out, &blocks[7], &conv_kernels[45]);
 	memset(blocks[8], 0, 8 * MAX_TENSOR_BLOCK * sizeof(float));
 	test_tensor_printf(blocks[7], 0, 0, 0);
+	test_tensor_printf(blocks[7], 1, 0, 0);
+	test_tensor_printf(blocks[7], 2, 0, 0);
+	test_tensor_printf(blocks[7], 3, 0, 0);
+	test_tensor_printf(blocks[7], 4, 0, 0);
+	test_tensor_printf(blocks[7], 5, 0, 0);
+	test_tensor_printf(blocks[7], 6, 0, 0);
 
 	// Detect 2
 	printf("\nBBox Detect 128 Channel\n");
@@ -383,6 +404,12 @@ int main(int argc, char *argv[]) {
 	detect_layer_serial(large_h1_out, &blocks[10], &conv_kernels[54]);
 	memset(blocks[11], 0, 4 * MAX_TENSOR_BLOCK * sizeof(float));
 	test_tensor_printf(blocks[10], 0, 0, 0);
+	test_tensor_printf(blocks[10], 1, 0, 0);
+	test_tensor_printf(blocks[10], 2, 0, 0);
+	test_tensor_printf(blocks[10], 3, 0, 0);
+	test_tensor_printf(blocks[10], 4, 0, 0);
+	test_tensor_printf(blocks[10], 5, 0, 0);
+	test_tensor_printf(blocks[10], 6, 0, 0);
 
 	// Detect 2
 	printf("\nClass Detect 128 Channel\n");
