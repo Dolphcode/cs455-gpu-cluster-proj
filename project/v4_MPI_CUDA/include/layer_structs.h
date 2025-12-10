@@ -3,6 +3,17 @@
 
 #include <cstdio>
 
+typedef struct {
+    int x;
+    int y;
+    int w;
+    int h;
+    int cid;
+    float class_conf;
+    int inactive;
+}bbox_t;
+
+
 /**
  * A struct defining metadata for a convolutional layer assuming a square kernel
  * The actual kernel data will be parsed under the assumption that kernel points

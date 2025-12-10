@@ -8,8 +8,8 @@
 #include "layer_structs.h"
 
 #define		NUM_LAYERS	        65
-#define     WEIGHT_BYTES        18737696
-#define     PREALLOC_TENSORS    15
+#define     WEIGHT_BYTES        187376960
+#define     PREALLOC_TENSORS    17
 
 #define     KERNEL_MAX_FLOATS   2305 // 2304 floats + bias
 

@@ -3,6 +3,26 @@
 
 #include "serial_funcs.h"
 
+void test_tensor_printf_in(tensor3_t* tensor, int x, int y, int channel) {
+	printf("Tensor is %d x %d with %d channels\n",
+		   tensor->w,
+		tensor->h,
+		tensor->c);
+
+
+	printf("\tValue at (%d, %d, %d) is %f\n",
+		   channel,
+		   x,
+		   y,
+		   tensor->data[
+			   channel * tensor->w * tensor->h +
+			   y * tensor->w +
+			   x
+		   ]
+	);
+
+}
+
 void conv_layer_serial(tensor3_t *in, tensor3_t *out, conv_t *kernel, int padding, int keep_tensor) {
 	// Checks
 	printf("Currently working on kernel with %d %d %d %d %d\n",
@@ -88,6 +108,8 @@ tensor3_t* c2f_layer_serial(tensor3_t **tensor_buf, conv_t **conv_buf, int n, in
 
 	// Compute the first layer with padding because the bottlenecks require padding	
 	conv_layer_serial(tensor_buf[0], tensor_buf[1], conv_buf[0], 1, 0);
+	printf("Open\n");
+	test_tensor_printf_in((tensor3_t*)tensor_buf[1], 1, 1, 0);
 
 	// Split is implicit
 	
@@ -102,6 +124,9 @@ tensor3_t* c2f_layer_serial(tensor3_t **tensor_buf, conv_t **conv_buf, int n, in
 		int b = a + 1, c = a + 2;
 		conv_layer_serial(tensor_buf[a], tensor_buf[b], conv_buf[1 + i * 2], 1, 0);
 		conv_layer_serial(tensor_buf[b], tensor_buf[c], conv_buf[2 + i * 2], 1, 0);
+		printf("Bottleneck\n");
+		test_tensor_printf_in((tensor3_t*)tensor_buf[b], 1, 1, 0);
+		test_tensor_printf_in((tensor3_t*)tensor_buf[c], 1, 1, 0);
 		if (shortcut) {
 			for (int chan = 0; chan < tensor_buf[c]->c; chan++) {
 				for (int row = 1; row < tensor_buf[a]->h - 1; row++) {
@@ -170,6 +195,10 @@ tensor3_t* c2f_layer_serial(tensor3_t **tensor_buf, conv_t **conv_buf, int n, in
 	memset(tensor_buf[0]->data, 0, sizeof(float) * (out_padding * 2 + concat_out->w) * (out_padding * 2 + concat_out->h) * conv_buf[2 * n + 1]->filters); 
 							
 	conv_layer_serial(concat_out, tensor_buf[0], conv_buf[2 * n + 1], out_padding, 0);
+
+	test_tensor_printf_in((tensor3_t*)tensor_buf[2 * n + 1], out_padding, out_padding, 0);
+	printf("Close\n");
+	test_tensor_printf_in((tensor3_t*)tensor_buf[2 * n + 1], 1, 1, 0);
 	
 	return tensor_buf[0];
 }
