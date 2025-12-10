@@ -29,6 +29,14 @@ The first two lines in the above sequence need only be run the first time the pr
 
 The build folder is organized into the same folder hierarchy as the source code for this project, such that each version of executable for this project can be found under its corresponding subfolder.
 
+Each of the implementations are contained in the following folders and take the following parameters
+```
+./build/project/v1_serial/YOLOv8_CPP_Serial_Main <CONFIDENCE_THRESHOLD> <IOU_THRESHOLD> <FILEPATH>
+./build/project/v2_MPI_only/YOLOv8_CPP_MPI <CONFIDENCE_THRESHOLD> <IOU_THRESHOLD> <FILEPATH>
+./build/project/v4_MPI_CUDA/YOLOv8_CPP_CUDA_MPI <FILEPATH> <CONFIDENCE_THRESHOLD> <IOU THRESHOLD>
+```
+We recommand `0.2` in place of `<CONFIDENCE_THRESHOLD>` and `0.3` in place of <IOU_THREHSHOLD>`
+
 ## Project Timeline
 ### v0 - Python Implementation, Model Exploration, and Tooling
 The `v0` version of this project is not so much an implementation of the architecture as it is an exploration of the architecture. We took some time to both download a version of the model and analyze the architecture to understand how model parameters and hyperparameters were chosen, and determine the best approach for implementing the model in C++ as opposed to Python.
@@ -43,3 +51,7 @@ In order for our implementation of the architecture to perform well, however, we
 One of the most challenging components of the serial implementation was the overall pipeline implementation.
 
 For the serial convolution implementation, we opted for a rough and simple implementation of the convolution operation (with more time we would ideally reformat the operation as a matrix multiply). Since the bulk of the challenge for drafting the model in the serial version is setting up pipelines for routing and pushing data to memory, we focused on getting a model that functioned with a pipeline that would be feasible to modify to include MPI and CUDA functionality later.
+
+
+
+
