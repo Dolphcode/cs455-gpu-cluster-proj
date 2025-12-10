@@ -4,6 +4,7 @@
 
 #include "layer_structs.h"
 #include "model.h"
+#include "preprocess.h"
 
 #define		ROOT		0
 
@@ -54,9 +55,25 @@ int main(int argc, char *argv[]) {
 	// Move kernel data to the GPU
 	load_model((conv_t*)conv_buf, conv_layer_disps, conv_block_size, my_rank);
 
-	if (my_rank == ROOT) {}
+	// Load parameters from argc argv
+	std::string filepath(argv[1]);
+	if (argc > 2) iou_thresh = atof(argv[2]);
+	if (argc > 3) conf_thresh = atof(argv[3]);
+
+	// Create a buffer for the input tensor
+	void *im_buf = malloc(sizeof(tensor3_t) + sizeof(float) * PROCESS_DIM * PROCESS_DIM * 3);
+	tensor3_t* out_tensor;
+
+	if (my_rank == ROOT) {
+		// Load the Image
+		load_image(filepath, 0, im_buf, my_rank);
+
+		// Run YOLOv8
+		out_tensor = detect((tensor3_t*) im_buf, my_rank);
+	}
 
 	// Cleanup
+	free(im_buf);
 	free_model(my_rank);
 	free(conv_buf);
 

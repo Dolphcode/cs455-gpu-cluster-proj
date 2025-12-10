@@ -2,6 +2,7 @@ add_executable(YOLOv8_CPP_CUDA_MPI
 	src/main.cpp
 	src/layer_structs.cpp
 	src/model.cu
+	src/preprocess.cpp
 )
 
 set_target_properties(YOLOv8_CPP_CUDA_MPI
