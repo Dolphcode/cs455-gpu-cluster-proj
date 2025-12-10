@@ -8,13 +8,13 @@
 #include "layer_structs.h"
 
 #define		NUM_LAYERS	        65
-#define     WEIGHT_BYTES        187376960
-#define     PREALLOC_TENSORS    20
+#define     WEIGHT_BYTES        18737696
+#define     PREALLOC_TENSORS    15
 
-#define     KERNEL_MAX_FLOATS   10000 // 2304 floats + bias
+#define     KERNEL_MAX_FLOATS   2305 // 2304 floats + bias
 
 
-#define     TENSOR_MAX_SIZE     (640 * 640 * 32)
+#define     TENSOR_MAX_SIZE     (320 * 320 * 16)
 #define     IM2COL_MAX_SIZE     (320 * 320 * 16 * 3 * 3)
 
 #define     IM2COL_BLK_DIM      64

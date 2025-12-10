@@ -17,17 +17,64 @@ int shared_mem;
 float iou_thresh = DEFAULT_IOU_THRESH;
 float conf_thresh = DEFAULT_CONF_THRESH;
 
-__global__ void sum(float *in, float *out, int N) {
+__global__ void maxpool2d_k5(const tensor3_t *__restrict__ in, tensor3_t *out) {
+	// Data Pointers
+	const float *__restrict__ in_data = (float*)(in + 1);
+	float *__restrict__ out_data = (float*)(out + 1);
+
+	// Compute my coordinates
+	const int channel = blockIdx.z;
+	const int x = blockIdx.x * blockDim.x + threadIdx.x;
+	const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+	// Cache input values since we'll transfer them over to out later
+	const int in_w = in->w;
+	const int in_h = in->h;
+	const int in_c = in->c;
+	if (x > in_w || y > in_h || channel > in_c) return;
+
+	// Set output tensor
+	out->w = in_w;
+	out->h = in_h;
+	out->c = in_c;
+
+	// Compute the index of the output pixel we are assigning to the tensor
+	const int out_index = channel * in_w * in_h +
+		x * in_w +
+		y;
+
+	// Find the max from the 5 x 5 area
+	float max = -FLT_MAX;
+	for (int k_check_y = y - 2; k_check_y <= y + 2; k_check_y++)
+	for (int k_check_x = x - 2; k_check_x <= y + 2; k_check_x++) {
+		// Bound Check
+		if (x < 0 || x >= in_w || y < 0 || y >= in_h) continue;
+
+		// Compute index
+		int check_index = channel * in_w * in_h +
+			k_check_y * in_w +
+			k_check_x;
+
+		// Retrieve and check
+		float check_val = in_data[check_index];
+		if (check_val > max) max = check_val;
+	}
+
+	// Set the max
+	out_data[out_index] = max;
+}
+
+__global__ void sum(const float *__restrict__ in, float *out, int N) {
 	int index = threadIdx.x + blockIdx.x * blockDim.x;
 	if (index < N)
 		out[index] += in[index];
 }
 
-__global__ void conv(tensor3_t *in, tensor3_t *out, conv_t *kernel) {
+__global__ void conv(const tensor3_t *__restrict__ in, tensor3_t *out, const conv_t *__restrict__ kernel) {
 	// Data Pointers
-	float *kernel_data = (float*)(kernel + 1);
-	float *in_data = (float*)(in + 1);
-	float *out_data = (float*)(out + 1);
+	const float *__restrict__ kernel_data = (float*)(kernel + 1);
+	const float *__restrict__ in_data = (float*)(in + 1);
+	float *__restrict__ out_data = (float*)(out + 1);
 
 	// Store kernel and input tensor metadata in shared memory
 	__shared__ tensor3_t in_meta;
@@ -38,7 +85,7 @@ __global__ void conv(tensor3_t *in, tensor3_t *out, conv_t *kernel) {
 	int filter = blockIdx.z;
 	int tid = blockDim.x * threadIdx.y + threadIdx.x;
 
-	// Cache input data and
+	// Cache input data and kernels
 	int out_w = in->w / kernel->stride;
 	int out_h = in->h / kernel->stride;
 
@@ -196,6 +243,39 @@ void c2f(tensor3_t **tensors, conv_t** kernels, short n, short shortcut, dim3 gr
 
 }
 
+void sppf(tensor3_t **tensors, conv_t**kernels, dim3 grid_dim, dim3 block_dim, int rank) {
+	// In case of errors
+	cudaError_t err;
+
+	// Compute the first convolution
+	conv<<<grid_dim, block_dim>>>(tensors[0], tensors[1], kernels[0]);
+
+	// Cache the tensor data
+	tensor3_t tensor_temp;
+	cudaMemcpy(&tensor_temp, tensors[1], sizeof(tensor3_t), cudaMemcpyDeviceToHost);
+
+	// MaxPool2D
+	maxpool2d_k5<<<grid_dim, block_dim>>>(tensors[1], tensors[2]);
+	maxpool2d_k5<<<grid_dim, block_dim>>>(tensors[2], tensors[3]);
+	maxpool2d_k5<<<grid_dim, block_dim>>>(tensors[3], tensors[4]);
+
+	// Concat
+	int block_size = tensor_temp.w * tensor_temp.h * tensor_temp.c * sizeof(float);
+	tensor_temp.c *= 4;
+	cudaMemcpy(tensors[5], &tensor_temp, sizeof(tensor3_t), cudaMemcpyHostToDevice);
+	tensor_temp.c /= 4;
+	float *out_data = (float*)(tensors[5] + 1);
+
+	for (int i = 0; i < 4; i++) {
+		int offset = block_size * i * sizeof(float);
+		if ((err = cudaMemcpy(out_data + offset, (float*)(tensors[1 + i] + 1), block_size, cudaMemcpyDeviceToDevice)) != cudaSuccess)
+			printf("Process %d: SPPF concat failure for index %d\n\t%s", rank, i, cudaGetErrorString(err));
+	}
+
+	// Compute the first second convolution
+	conv<<<grid_dim, block_dim>>>(tensors[5], tensors[0], kernels[1]);
+}
+
 tensor3_t *detect(tensor3_t *in, int rank) {
 	// In case of errors
 	cudaError_t err;
@@ -209,6 +289,40 @@ tensor3_t *detect(tensor3_t *in, int rank) {
 
 	// Initialize block and grid dim
 	dim3 grid_dim(16, 16, h_kernels[0]->filters), block_dim(20, 20);
+
+
+	conv<<<grid_dim, block_dim>>>(dev_blocks[0], dev_blocks[1], dev_kernels[0]);
+
+	grid_dim = {8, 8, (unsigned)h_kernels[1]->filters};
+	conv<<<grid_dim, block_dim>>>(dev_blocks[1], dev_blocks[2], dev_kernels[1]);
+
+	c2f(&dev_blocks[2], &dev_kernels[2], 1, 1, grid_dim, block_dim, rank);
+
+	grid_dim = {4, 4, (unsigned)h_kernels[6]->filters};
+	conv<<<grid_dim, block_dim>>>(dev_blocks[2], dev_blocks[0], dev_kernels[6]);
+
+	c2f(&dev_blocks[0], &dev_kernels[7], 2, 1, grid_dim, block_dim, rank); // The large
+
+	grid_dim = {2, 2, (unsigned)h_kernels[13]->filters};
+	conv<<<grid_dim, block_dim>>>(dev_blocks[0], dev_blocks[1], dev_kernels[13]);
+
+	c2f(&dev_blocks[1], &dev_kernels[14], 2, 1, grid_dim, block_dim, rank); // The medium
+
+	grid_dim = {1, 1, (unsigned)h_kernels[20]->filters};
+	conv<<<grid_dim, block_dim>>>(dev_blocks[1], dev_blocks[2], dev_kernels[20]);
+
+	c2f(&dev_blocks[2], &dev_kernels[21], 1, 1, grid_dim, block_dim, rank);
+
+	sppf(&dev_blocks[2], &dev_kernels[25], grid_dim, block_dim, rank); // The small
+
+	float value = 0;
+	cudaMemcpy(&value, dev_blocks[2] + 1, sizeof(float), cudaMemcpyDeviceToHost);
+	printf("Process %d: c2f complete %f\n", rank, value);
+	value = 0;
+	cudaMemcpy(&value, (float*)(dev_blocks[2] + 1) + 1, sizeof(float), cudaMemcpyDeviceToHost);
+	printf("Process %d: c2f complete %f\n", rank, value);
+
+	/*
 
 	// Conv idx 0
 	conv<<<grid_dim, block_dim>>>(dev_blocks[0], dev_blocks[1], dev_kernels[0]);
@@ -321,7 +435,7 @@ tensor3_t *detect(tensor3_t *in, int rank) {
 	cudaMemcpy(&value, dev_blocks[4] + 1, sizeof(float), cudaMemcpyDeviceToHost);
 	printf("Process %d: c2f complete %f\n", rank, value);
 	printf("Testing Kernel, %d %d %d %d\n", h_kernels[14]->dim, h_kernels[14]->filters, h_kernels[14]->channels, h_kernels[14]->padding);
-
+	*/
 
 	return NULL;
 }
@@ -353,18 +467,7 @@ void load_model(conv_t *kernels, int *displacements, size_t block_size, int rank
 		*/
 	}
 
-	/*
-	// Allocate memory for the im2col buffer
-	size_t im2col_alloc = IM2COL_MAX_SIZE * sizeof(float) + sizeof(tensor3_t);
-	if ((err = cudaMalloc(&dev_im2col_buf, im2col_alloc)) != cudaSuccess) {
-		printf("Process %d: Failed to allocate memory for im2col buffer\n\t%s", rank, cudaGetErrorString(err));
-		return;
-	}
-	dev_im2col_block = (tensor3_t*)dev_im2col_buf;
-	printf("Process %d: Allocated %d B of memory for im2col buffer\n", rank, im2col_alloc);
-	*/
-
-	// Allocate memory for the im2col buffer
+	// Allocate memory for the tensors
 	size_t tensor_max_alloc = TENSOR_MAX_SIZE * sizeof(float) + sizeof(tensor3_t);
 	if ((err = cudaMalloc(&dev_blocks_buf, tensor_max_alloc * PREALLOC_TENSORS)) != cudaSuccess) {
 		printf("Process %d: Failed to allocate memory for tensor buffers\n\t%s", rank, cudaGetErrorString(err));
